@@ -1,0 +1,1239 @@
+import java.util.*;
+import java.lang.Math;
+import java.text.NumberFormat;
+
+/*
+ * Subject: CST338 
+ * Team: Cubed Expresso
+ *       Chris Smith
+ *       Clarence Mitchell
+ *       Daniel Cadwell
+ * Assignment: 2 
+ * ClassName: Assig2.java
+ * 
+ *
+ * Description
+ * This assignment simulates a slot machine using text output of either 
+ *   bar
+ *   cherries
+ *   (space)
+ *   7
+ * A helper class called TripleString used 
+ */
+
+//**********************************//
+//                                  //
+//   main class Assig2 Definition   //
+//                                  //
+//**********************************//
+
+public class Assig2
+{
+   private static final String BAR_VALUE = "BAR";
+   private static final String CHERRIES_VALUE = "cherries";
+   private static final String SPACE_VALUE = "(space)";
+   private static final String SEVEN_VALUE = "7";
+
+   public static void main(String[] args)
+   {
+      TripleString thePull = new TripleString();
+      int winnings = 0;
+      int userBet;
+      boolean continuePlaying = true;
+
+      userBet = getBet();
+
+      // 
+      // Continue loop until user selects exit (bet of 0)
+      //
+      while ((userBet != 0) && (continuePlaying))
+      {
+         //
+         //  get new object and initialize winnings
+         //
+
+         thePull = pull();
+
+         winnings = getPayMultiplier(thePull) * userBet; 
+         
+         //
+         //  saveWinnings returns true if not at max_pulls
+         //
+         if(thePull.saveWinnings(winnings))
+            {
+            //
+            //  Now display current results
+            //
+            display(thePull, winnings);
+            userBet = getBet(); 
+
+            }
+         else
+         {
+            //
+            // -- Display message MAX_PULLS has been reached and set exit
+            //
+            System.out.println("Maximum pulls reached!");
+            continuePlaying = false;
+         } // end if
+         
+      } // end while
+
+      
+      //
+      // Display messages when game ends, either by 0 bet or MAX_PULLS reached
+      //
+      System.out.println();
+      System.out.println("Thank you for playing Casino!");
+      System.out.println("Your individual winnings were:");
+      System.out.println(thePull.displayWinnings()); 
+      System.out.println("Your total winnings were:");
+      System.out.println("$" + thePull.sumWinnings());
+   } // ends main()
+
+   /***************************************************************
+    * display                                                     *
+    *    Displays the current pull and winnings                   *
+    *    If not a winner then displays loss notice                *
+    *                                                             *
+    * Return Value:                                               *
+    *    void                                                     *
+    *                                                             *
+    * PARAMETERS:                                                 *
+    *    thePull  - tripleString pull object to be printed        *
+    *    winnings - total winnings to be printed                  *
+    *                                                             *
+    * Precondition:                                               *
+    *    thePull references a tripleString object that has values *
+    *    winnings is a value equal to or greater than zero        *
+    *                                                             *
+    * Postcondition:                                              *
+    *    information is printed to console                        *
+    ***************************************************************/
+
+   public static void display (TripleString thePull, int winnings )
+   {
+      NumberFormat defaultFormat = NumberFormat.getCurrencyInstance();
+
+      // 
+      // Notify the user of the pull results...
+      //
+      System.out.println("Whirrr... your pull is...");  
+      System.out.println("  " + thePull);
+      
+      if (winnings == 0)
+      {
+         System.out.println("Sorry you lost. \n");
+      }
+      else
+      {
+         System.out.println("Congratulations, you won "
+            + defaultFormat.format(winnings) + "\n");
+      } // end if
+   } // ends display()
+
+   /************************************
+    * getBet                           *
+    *    Gets bet from user            *
+    *                                  *
+    * Return Value:                    *
+    *    int bet user entered          *
+    *                                  *
+    * PARAMETERS:                      *
+    *    n/a                           *
+    *                                  *
+    * Precondition:                    *
+    *    n/a                           *
+    *                                  *
+    * Postcondition:                   *
+    *    The value entered by the user *
+    ************************************/
+
+   public static int getBet()
+   {
+      // Initialize scanner for user input through keyboard.
+      //
+      Scanner keyboard = new Scanner(System.in);
+      int bet;
+      
+      System.out.println("Please enter your bet (between 1 - 100), or 0 to"
+         + " exit:");
+
+      bet = keyboard.nextInt();
+
+      //
+      // Continue to ask user for bet until a valid entry is made
+      //
+      while ((bet < 0) || (bet > 100))
+      {
+         System.out.println("Invalid bet! Please enter your bet (between 1 -"
+            + " 100), or 0 to exit: ");
+   
+         bet = keyboard.nextInt();
+      } // end while
+
+      return bet;
+   } // ends getBet() 
+ 
+   /************************************************************
+    * getPayMultiplier                                         *
+    *    Inspects pullString and determines                    *
+    *    what the pay multiplier should be                     *
+    *                                                          *
+    * Return Value:                                            *
+    *    int payMultiplier                                     *
+    *                                                          *
+    * PARAMETERS:                                              *
+    *    thePull - TripleString object used to get pull values *
+    *                                                          *
+    * Precondition:                                            *
+    *    thePull references a valid object                     *
+    *                                                          *
+    * Postcondition:                                           *
+    *    A payMultiplier value is set                          *
+    ************************************************************/
+   
+   public static int getPayMultiplier(TripleString thePull)
+   {
+      int payMultiplier = 0;
+      String pullString1, pullString2, pullString3;
+      
+      pullString1 = thePull.getString1();
+      pullString2 = thePull.getString2();
+      pullString3 = thePull.getString3();
+
+      switch (pullString1)
+      {
+         case CHERRIES_VALUE:
+         {
+            if (pullString2 != CHERRIES_VALUE)      
+            {
+               // cherries ^cherries any
+               //
+               payMultiplier = 5;        
+            } 
+            else if (pullString3 != CHERRIES_VALUE) 
+            {
+               // cherries cherries ^cherries
+               //
+               payMultiplier = 15;      
+            }
+            else                                    
+            {
+               // cherries cherries cherries
+               //
+               payMultiplier = 30;      
+            } // end if
+            
+            break;
+         } // end case cherries_values
+         
+         case BAR_VALUE:
+         {
+            if ((pullString2 == BAR_VALUE) && (pullString3 == BAR_VALUE))
+            {
+               // BAR BAR BAR 
+               //
+               payMultiplier = 50;      
+            } // end if
+            
+            break;
+         } // end case bar_value
+         
+         case SEVEN_VALUE:
+         {
+            if ((pullString2 == SEVEN_VALUE) && (pullString3 == SEVEN_VALUE))
+            {
+               // 7 7 7
+               //  
+               payMultiplier = 100;
+            } // end if
+            
+            break;
+         } // end case seven_value
+      } // end switch 
+
+      return payMultiplier;
+   } // ends getPayMultiplier() 
+
+   /********************************************
+    * pull                                     *
+    *    Generate random pull string and       *
+    *    store in TripleString object          *
+    *                                          *
+    * Return Value:                            *
+    *    reference to new TripleString         *
+    *                                          *
+    * PARAMETERS:                              *
+    *    n/a                                   *
+    *                                          *
+    * Precondition:                            *
+    *    n/a                                   *
+    *                                          *
+    * Postcondition:                           *
+    *    A new TripleString object is created  *
+    *    and initialized to random pull values *
+    ********************************************/
+   
+   private static TripleString pull()
+   {
+      TripleString pullReturn = new TripleString(); 
+
+      //
+      // Set the String values of the object to be returned
+      //
+      pullReturn.setString1(randString());
+      pullReturn.setString2(randString());
+      pullReturn.setString3(randString());
+       
+      return pullReturn;
+   } // end pull()
+   
+   /***********************************************
+    * randString                                  *
+    *    Generate a random number and use it to   *
+    *    find random probability for string value *
+    *                                             *
+    * Return Value:                               *
+    *    String                                   *
+    *                                             *
+    * PARAMETERS:                                 *
+    *    n/a                                      *
+    *                                             *
+    * Precondition:                               *
+    *    n/a                                      *
+    *                                             *
+    * Postcondition:                              *
+    *    A string is created that is either       *
+    *    bar, cherries, (space) or seven          *
+    ***********************************************/
+
+   private static String randString()
+   {
+      // Generate a random double from 1.0 to 100.0
+      //
+      double slot = (Math.random() * 100) + 1;
+      String slotString;
+      
+      //
+      // Checks the range and assigns values
+      //
+      if (slot <= 50.0)       
+      {
+         slotString = BAR_VALUE;
+      }
+      else if (slot > 50.0 && slot <= 75.0)
+      {
+         slotString = CHERRIES_VALUE;
+      }
+      else if (slot > 75.0 && slot <= 87.5)
+      {
+         slotString = SPACE_VALUE;
+      }
+      else
+      {
+         slotString = SEVEN_VALUE;
+      } // end if
+      
+      return slotString;
+   } // end randString()
+} // ends class Assig2
+
+//***************************************************//
+//                                                   //
+//   TripleString Class Definition                   //
+//   Sibling class, can be used by any other class   //
+//                                                   //
+//***************************************************//
+
+class TripleString
+{
+   //
+   // Constants
+   //
+   private static final char SPACE_VALUE = ' ';
+   public static final int MAX_LEN = 20;
+   public static final int MAX_PULLS = 40;
+
+   //
+   // Private Attributes
+   //
+   private String string1, string2, string3;
+   private static int[] pullWinnings = new int[MAX_PULLS];
+   private static int numPulls;
+   
+   // 
+   // Default constructor
+   //
+   public TripleString()
+   {
+      this.string1 ="";
+      this.string2 ="";
+      this.string3 ="";
+   } // end TripleString()
+ 
+   // 
+   // Standard method that concatenates all 3 strings into 1 string
+   //
+   public String toString()
+   {
+      return (this.string1 + SPACE_VALUE + SPACE_VALUE + SPACE_VALUE
+         + this.string2 + SPACE_VALUE + SPACE_VALUE + SPACE_VALUE
+         + this.string3);
+   } // end toString()
+
+   // 
+   // Private Helper method that validates the string
+   //
+   private boolean validString(String str)
+   {
+      if (str != null && str.length() <= MAX_LEN)
+         return true;
+      else
+         return false;
+   } // end validString()
+   
+   /***********************************************
+    * Accessors:                                  *
+    *    Used to get each individual string value *
+    ***********************************************/
+
+   public String getString1()
+   {
+      return string1;  
+   } // end getString1()
+   
+   public String getString2()
+   {
+      return string2;
+   } // end getString2()
+   
+   public String getString3()
+   {
+      return string3;
+   } // end getString3()
+
+   /***********************************************
+    * Mutators:                                   *
+    *    Used to set each individual string value *
+    ***********************************************/
+
+   public boolean setString1(String string1)
+   {
+      if (validString(string1) == true)
+      {
+         this.string1 = string1;
+         return true;
+      }
+      else
+      {
+         return false;
+      } // end if  
+   } // end setString1()
+   
+   public boolean setString2(String string2)
+   {
+      if (validString(string2) == true)
+      {
+         this.string2 = string2;
+         return true;
+      }
+      else
+      {
+         return false;
+      } // end if  
+   } // end setString2()
+   
+   public boolean setString3(String string3)
+   {
+      if (validString(string3) == true)
+      {
+         this.string3 = string3;
+         return true;
+      }
+      else
+      {
+         return false;
+      } // end if  
+   } // end setString3()
+ 
+   /*************************************************
+    * displayWinnings                               *
+    *    Displays winnings in array                 *
+    *                                               *
+    * Return Value:                                 *
+    *    string - list of winnings array            *
+    *                                               *
+    * PARAMETERS:                                   *
+    *    n/a                                        *
+    *                                               *
+    * Precondition:                                 *
+    *    numPulls is greater than or equal to zero  *
+    *    pullWinnings array exists                  *
+    *                                               *
+    * Postcondition:                                *
+    *    pullWinnings array is displayed to console *
+    *************************************************/
+
+   public String displayWinnings()
+   {
+      String returnStringValue = "";
+      int loopCounter = 0;
+      
+      //
+      // Loop through array and concatenate winnings
+      //
+      for (loopCounter = 0; loopCounter < numPulls; loopCounter++ )
+      {
+         returnStringValue += "$" + pullWinnings[loopCounter];
+         returnStringValue += SPACE_VALUE + " ";
+      } // end for
+      
+      return returnStringValue.trim();
+   } // end displayWinnings()
+   
+   /**************************************
+    * sumWinnings                        *
+    *    Determines the total winnings   *
+    *    when the game ends              *
+    *                                    *
+    * Return Value:                      *
+    *    int - sum of pullWinnings array *
+    *                                    *
+    * PARAMETERS:                        *
+    *    n/a                             *
+    *                                    *
+    * Precondition:                      *
+    *    pullWinnings array exists       *
+    *                                    *
+    * Postcondition:                     *
+    *    The sum of pullWinnings array   *
+    *    is displayed to console         *
+    **************************************/
+   
+   public int sumWinnings()
+   {
+      int totalWinnings = 0;
+      
+      for (int i : TripleString.pullWinnings)
+         totalWinnings += i;
+      
+      return totalWinnings;  
+   } //  end sumWinnings()
+   
+   /***********************************************************
+    * saveWinnings                                            *
+    *    Stores current pull winnings in array                *
+    *                                                         *
+    * Return Value:                                           *
+    *    true   - if successful                               *
+    *    false  - if fail                                     *
+    *                                                         *
+    * PARAMETERS:                                             *
+    *    winnings - winnings for current pull to be stored    *
+    *                                                         *
+    * Precondition:                                           *
+    *    numPulls is not greater than maximum length of array *
+    *    winnings is a value equal to or greater than zero    *
+    *                                                         *
+    * Postcondition:                                          *
+    *    pullWinnings array contains current pull winnings    *
+    *    at numPulls location, numPulls is incremented by 1   *
+    ***********************************************************/
+
+   public boolean saveWinnings(int winnings)
+   {
+      boolean returnValue = true;
+      
+      //
+      //  if not at max add to winnings
+      //
+      if (numPulls < MAX_PULLS)
+      {
+         pullWinnings[numPulls++] = winnings;
+
+         returnValue = true;
+      }
+      else
+      {
+         returnValue = false;
+      }
+      
+      return returnValue;
+   } // end saveWinnings()
+} // end class TripleString
+
+
+/*********************************** OUTPUT ************************************
+*-------------------------------------------------------------------- 
+* 1st run -  The empty runs....  (Zero and terminate)
+* Please enter your bet (between 1 - 100), or 0 to exit:
+*--------------------------------------------------------------------
+0
+
+Thank you for playing Casino!
+Your individual winnings were:
+
+Your total winnings were:
+$0
+
+*-------------------------------------------------------------------
+*
+*  2nd Run -  entered 2 good bets, then -1, 101, then 23 good bets 
+*  NOTE: The display of the pull output runs passed 80 characters 
+*
+*-------------------------------------------------------------------  
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+20
+Whirrr... your pull is...
+  cherries   BAR   BAR
+Congratulations, you won $100.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+-1
+Invalid bet! Please enter your bet (between 1 - 100), or 0 to exit: 
+101
+Invalid bet! Please enter your bet (between 1 - 100), or 0 to exit: 
+1
+Whirrr... your pull is...
+  7   BAR   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+99
+Whirrr... your pull is...
+  BAR   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  7   BAR   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  7   7   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   7   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   cherries   (space)
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   (space)
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   7   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   BAR   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   BAR   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  7   (space)   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  7   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   (space)   (space)
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   cherries   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   7   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  7   BAR   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+0
+
+Thank you for playing Casino!
+Your individual winnings were:
+$0  $100  $0  $0  $0  $0  $50  $0  $0  $0  $0  $500  $0  $0  $0  $500  $500  $500  $0  $0  $0  $0  $0  $0  $0
+Your total winnings were:
+$2150
+*-------------------------------------------------------------------
+* 
+*  Covered to this point are
+*    cherries     not cherries        any
+*    BAR          BAR                 BAR
+*
+**-------------------------------------------------------------------
+*
+*  3rd Run -  40 pulls made and program automatically stops 
+*  NOTE: The display of the pull output runs passed 80 characters 
+*        
+*-------------------------------------------------------------------  
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   BAR   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   (space)   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   (space)
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   (space)
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   (space)   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   7   (space)
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   (space)
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  7   BAR   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   BAR   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   cherries   cherries
+Congratulations, you won $300.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   BAR   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   BAR   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   (space)
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   7   (space)
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   (space)
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   7   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   7   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   (space)   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   7   (space)
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   cherries   BAR
+Congratulations, you won $150.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   7   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   cherries   (space)
+Congratulations, you won $150.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   7
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   cherries   BAR
+Congratulations, you won $150.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   (space)   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Maximum pulls reached!
+
+Thank you for playing Casino!
+Your individual winnings were:
+$50  $0  $0  $50  $50  $50  $50  $0  $0  $50  $0  $0  $300  $0  $0  $0  $50  $500  $0  $0  $0  $0  $50  $0  $50  $0  $0  $0  $50  $0  $0  $150  $0  $150  $50  $500  $0  $150  $0  $0
+Your total winnings were:
+$2300
+
+
+*-------------------------------------------------------------------
+*  Covered to this point are
+*    cherries     not cherries        any
+*    cherries     cherries            not cherries
+*    cherries     cherries            cherries
+*    BAR          BAR                 BAR
+*--------------------------------------------------------------------
+*
+*
+***-------------------------------------------------------------------
+*
+*  4th Run - Pull until I get 7 7 7... this might be multiple runs...
+*             
+*  NOTE: the display of the pull output runs passed 80 characters 
+*        
+*-------------------------------------------------------------------  
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   (space)   (space)
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   (space)   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   (space)   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   (space)   (space)
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  7   BAR   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   7
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   BAR   (space)
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   cherries   cherries
+Congratulations, you won $300.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   (space)   cherries
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   (space)   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   7   BAR
+Congratulations, you won $50.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   (space)
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   7
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   7   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  (space)   (space)   cherries
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   BAR   BAR
+Congratulations, you won $500.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  BAR   cherries   BAR
+Sorry you lost. 
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  7   7   7
+Congratulations, you won $1,000.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+10
+Whirrr... your pull is...
+  cherries   cherries   BAR
+Congratulations, you won $150.00
+
+Please enter your bet (between 1 - 100), or 0 to exit:
+0
+
+Thank you for playing Casino!
+Your individual winnings were:
+$0  $0  $0  $0  $50  $0  $50  $0  $0  $50  $0  $0  $50  $50  $50  $300  $50  $0  $500  $0  $50  $500  $0  $0  $500  $0  $0  $0  $500  $0  $1000  $150
+Your total winnings were:
+$3850
+
+*-------------------------------------------------------------------
+*  31 pulls until I got a 7 7 7 ....
+*  Covered to this point are
+*    cherries     not cherries        any
+*    cherries     cherries            not cherries
+*    cherries     cherries            cherries
+*    BAR          BAR                 BAR
+*    7            7                   7
+*--------------------------------------------------------------------
+
+
+******************************************************************************/

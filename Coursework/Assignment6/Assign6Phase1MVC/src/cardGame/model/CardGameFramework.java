@@ -1,0 +1,151 @@
+package cardGame.model;
+
+//****************************************//
+////
+//CardGameFramework Class Definition   //
+////
+//****************************************//
+class CardGameFramework
+{
+   private static final int MAX_PLAYERS = 50;
+
+   private int numPlayers;
+   private int numPacks;              // # standard 52-card packs per deck
+   // ignoring jokers or unused cards
+   private int numJokersPerPack;      // if 2 per pack & 3 packs per deck, get 6
+   private int numUnusedCardsPerPack; // # cards removed from each pack
+   private int numCardsPerHand;       // # cards to deal each player
+   private Deck deck;                 // holds the initial full deck and gets
+   // smaller (usually) during play
+   private Hand[] hand;               // one Hand for each player
+   private Card[] unusedCardsPerPack; // an array holding the cards not used
+   // in the game.  e.g. pinnacle does not
+   // use cards 2-8 of any suit
+
+   public CardGameFramework( int numPacks, int numJokersPerPack,
+         int numUnusedCardsPerPack,  Card[] unusedCardsPerPack,
+         int numPlayers, int numCardsPerHand)
+   {
+      int k;
+
+      // filter bad values
+      if (numPacks < 1 || numPacks > 6)
+         numPacks = 1;
+      if (numJokersPerPack < 0 || numJokersPerPack > 4)
+         numJokersPerPack = 0;
+      if (numUnusedCardsPerPack < 0 || numUnusedCardsPerPack > 50) //  > 1 card
+         numUnusedCardsPerPack = 0;
+      if (numPlayers < 1 || numPlayers > MAX_PLAYERS)
+         numPlayers = 4;
+      // one of many ways to assure at least one full deal to all players
+      if (numCardsPerHand < 1 ||
+            numCardsPerHand >  numPacks * (52 - numUnusedCardsPerPack)
+            / numPlayers )
+         numCardsPerHand = numPacks * (52 - numUnusedCardsPerPack) / numPlayers;
+
+      // allocate
+      this.unusedCardsPerPack = new Card[numUnusedCardsPerPack];
+      this.hand = new Hand[numPlayers];
+      for (k = 0; k < numPlayers; k++)
+         this.hand[k] = new Hand();
+      deck = new Deck(numPacks);
+
+      // assign to members
+      this.numPacks = numPacks;
+      this.numJokersPerPack = numJokersPerPack;
+      this.numUnusedCardsPerPack = numUnusedCardsPerPack;
+      this.numPlayers = numPlayers;
+      this.numCardsPerHand = numCardsPerHand;
+      for (k = 0; k < numUnusedCardsPerPack; k++)
+         this.unusedCardsPerPack[k] = unusedCardsPerPack[k];
+
+      // prepare deck and shuffle
+      newGame();
+   } // end overloaded CardGameFramework()
+
+   // constructor default for game like bridge
+   public CardGameFramework()
+   {
+      this(1, 0, 0, null, 4, 13);
+   } // end CardGameFramework()
+
+   public Hand getHand(int k)
+   {
+      // hands start from 0 like arrays
+
+      // on error return automatic empty hand
+      if (k < 0 || k >= numPlayers)
+         return new Hand();
+
+      return hand[k];
+   } // end getHand()
+
+   public Card getCardFromDeck()
+   {
+      return deck.dealCard();
+   } // end getCardFromDeck()
+
+   public int getNumCardsRemainingInDeck()
+   {
+      return deck.getNumCards();
+   } // end getNumCardsRemainingInDeck()
+
+   public void newGame()
+   {
+      int k, j;
+
+      // clear the hands
+      for (k = 0; k < numPlayers; k++)
+         hand[k].resetHand();
+
+      // restock the deck
+      deck.init(numPacks);
+
+      // remove unused cards
+      for (k = 0; k < numUnusedCardsPerPack; k++)
+         deck.removeCard(unusedCardsPerPack[k]);
+
+      // add jokers
+      for (k = 0; k < numPacks; k++)
+         for ( j = 0; j < numJokersPerPack; j++)
+            deck.addCard(new Card('X', Card.Suit.values()[j]));
+
+      // shuffle the cards
+      deck.shuffle();
+   } // end newGame()
+
+   public boolean deal()
+   {
+      // returns false if not enough cards, but deals what it can
+      int k, j;
+      boolean enoughCards;
+
+      // clear all hands
+      for (j = 0; j < numPlayers; j++)
+         hand[j].resetHand();
+
+      enoughCards = true;
+
+      for (k = 0; k < numCardsPerHand && enoughCards ; k++)
+      {
+         for (j = 0; j < numPlayers; j++)
+            if (deck.getNumCards() > 0)
+               hand[j].takeCard(deck.dealCard());
+            else
+            {
+               enoughCards = false;
+               break;
+            } // end if-else
+      } // end for loop 
+
+      return enoughCards;
+   } // end deal()
+
+   void sortHands()
+   {
+      int k;
+
+      for (k = 0; k < numPlayers; k++)
+         hand[k].sort();
+   } // end sortHands()
+} // end class CardGameFramework

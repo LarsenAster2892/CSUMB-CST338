@@ -1,0 +1,1192 @@
+package c3spresso;
+import java.lang.Cloneable; 
+
+/*
+ * Subject: CST338 
+ * Team: Cubed Espresso
+ *       Chris Smith
+ *       Clarence Mitchell
+ *       Daniel Cadwell
+ * Assignment: (#4) - Optical Barcode Readers and Writers
+ * ClassName: Assig4.java
+ * 
+ *
+ * Description
+ * This assignment combines 2D arrays, interfaces (including Cloneable), and a
+ * very active industrial application, optical scanning and pattern recognition.
+ * 
+ * Phase 1 - BarcodeIO Interface
+ * This Phase does the following:
+ *   1. Defines the interface BarcodeIO
+ *   2. Contains certain method signatures
+ * 
+ * Phase 2 - BarcodeImage Class
+ * This Phase does the following:
+ *   1. Realize all essential data and methods associated with a 2D pattern.
+ *   2. Store 2D data.
+ *   3. Retrieve 2D data.
+ *   4. Implements Cloneable
+ * 
+ * Phase 3 - DataMatrix Class
+ * This Phase does the following:
+ *   1. Defines a DataMatrix class
+ *   2. Implements BarcodeIO
+ *   3. Executes test that Creates objects
+ *   
+ */
+
+public class Assig4
+{
+   public static void main(String[] args)
+   {
+      //
+      //  Test strings...
+      //
+      String[] sImageIn =
+      {
+         "                                               ",
+         "                                               ",
+         "                                               ",
+         "     * * * * * * * * * * * * * * * * * * * * * ",
+         "     *                                       * ",
+         "     ****** **** ****** ******* ** *** *****   ",
+         "     *     *    ****************************** ",
+         "     * **    * *        **  *    * * *   *     ",
+         "     *   *    *  *****    *   * *   *  **  *** ",
+         "     *  **     * *** **   **  *    **  ***  *  ",
+         "     ***  * **   **  *   ****    *  *  ** * ** ",
+         "     *****  ***  *  * *   ** ** **  *   * *    ",
+         "     ***************************************** ",  
+         "                                               ",
+         "                                               ",
+         "                                               "
+      };      
+      
+      String[] sImageIn_2 =
+      {
+         "                                          ",
+         "                                          ",
+         "* * * * * * * * * * * * * * * * * * *     ",
+         "*                                    *    ",
+         "**** *** **   ***** ****   *********      ",
+         "* ************ ************ **********    ",
+         "** *      *    *  * * *         * *       ",
+         "***   *  *           * **    *      **    ",
+         "* ** * *  *   * * * **  *   ***   ***     ",
+         "* *           **    *****  *   **   **    ",
+         "****  *  * *  * **  ** *   ** *  * *      ",
+         "**************************************    ",
+         "                                          ",
+         "                                          ",
+         "                                          ",
+         "                                          "
+      };
+     
+      BarcodeImage bc = new BarcodeImage(sImageIn);
+      DataMatrix dm = new DataMatrix(bc);
+      
+      //
+      // First secret message
+      //
+      dm.translateImageToText();
+      dm.displayTextToConsole();
+      dm.displayImageToConsole();
+      
+      //
+      // second secret message
+      //
+      bc = new BarcodeImage(sImageIn_2);
+      dm.scan(bc);
+      dm.translateImageToText();
+      dm.displayTextToConsole();
+      dm.displayImageToConsole();
+      
+      // create your own message
+      dm.readText("What a great resume builder this is!");
+      dm.generateImageFromText();
+      dm.displayTextToConsole();
+      dm.displayImageToConsole();
+   } // end main()
+} // end base class Assig4
+
+
+/*
+ * 
+ * PHASE 1
+ * BarcodeIO Interface
+ * 
+ * Description
+ * This interface provides an outline for future classes and contains 
+ * constants
+ * 
+ * 
+ */
+
+//*************************************************************
+//
+//  BarcodeIO Interface Definition
+//
+//
+//*************************************************************
+
+interface BarcodeIO
+{
+   /**************************
+    *                        *
+    *   DEFINING CONSTANTS   *
+    *                        *
+    **************************/
+   
+   //
+   // BarcodeImage Constants
+   //
+   public static final int MAX_HEIGHT = 30; // exact internal dimensions of 2D
+   public static final int MAX_WIDTH = 65; // exact internal dimensions of 2D
+   
+   //
+   // DataMatrix Constants
+   //
+   public static final char BLACK_CHAR = '*';
+   public static final char WHITE_CHAR = ' ';
+   
+   
+   public boolean scan(BarcodeImage bc);
+   public boolean readText(String text);
+   public boolean generateImageFromText();
+   public boolean translateImageToText();
+   public void displayTextToConsole();
+   public void displayImageToConsole();
+} // end interface BarcodeIO
+
+
+
+/*
+ * 
+ * PHASE 2
+ * ClassName: BarcodeImage
+ * 
+ * Description
+ * This class provides the essential data and methods of the associated 
+ * BarCode image (2D pattern)  
+ * 
+ * 
+ */
+
+//*************************************************************
+//
+//  BarcodeImage Class Definition
+//
+//
+//*************************************************************
+
+class BarcodeImage implements Cloneable
+{
+   //
+   //  ----- Private Attributes  ---
+   //
+
+   private boolean[][] image_data;
+ 
+   
+   // ***************************************
+   // 
+   //    --- constructors
+   //
+   // ***************************************   
+   /****************************
+    *                          *
+    *   DEFAULT CONSTRUCTORS   *
+    *   (2 MINIMUM)            *
+    *                          *
+    ****************************/
+   //
+   // Default Constructor
+   //
+   public BarcodeImage()
+   {
+      image_data = new boolean[BarcodeIO.MAX_HEIGHT][BarcodeIO.MAX_WIDTH];
+      int row, col;
+      
+      //
+      // create a empty image using max values
+      //
+      for (row = 0; row < image_data.length; row++)
+      {
+         for (col = 0; col < image_data[row].length; col++)
+         {
+            image_data[row][col] = false;
+         } // end for col
+      } // end for row
+      
+   } // end default constructor Barcode()
+   
+   //
+   // Overloaded Constructor - converting 1D array to 2D array
+   //
+   public BarcodeImage(String[] str_data)
+   {
+      int lowerLeft = BarcodeIO.MAX_HEIGHT - str_data.length;
+      int row = 0;
+      int col = 0;
+      image_data = new boolean[BarcodeIO.MAX_HEIGHT][BarcodeIO.MAX_WIDTH];
+      
+      //
+      //  loop through the input string array and create the image
+      //
+      for (int i = 0; i < str_data.length; i++)
+      {
+         col = 0;
+         for (int j = 0; j < str_data[row].length(); j++)
+         {
+            //
+            // determine char at row, col and set value in image
+            //
+            if (str_data[row].charAt(col) == BarcodeIO.WHITE_CHAR)
+            {
+               image_data[lowerLeft + row][col] = false;
+               col++;
+            } // end if
+            else if (str_data[row].charAt(col) == BarcodeIO.BLACK_CHAR)
+            {
+               image_data[lowerLeft + row][col] = true;
+               col++;
+            } // end else-if
+         } // end for loop (int j)
+         row++;
+
+      } // end for loop (int i)
+       
+      
+   } // end overloaded constructor BarcodeImage(String[] str_data)
+   
+   
+   /****************************
+    *                          *
+    *   ACCESSORS & MUTATORS   *
+    *                          *
+    ****************************/
+   //
+   // Accessor
+   //
+   public boolean getPixel(int row, int col)
+   {
+      boolean returnBoolValue = false;
+      //
+      //  check if values outside of range 
+      // 
+      if ((row < 0) || (row > BarcodeIO.MAX_HEIGHT  -1 ) || 
+            (col < 0) || (col > BarcodeIO.MAX_WIDTH  -1))
+      {
+         returnBoolValue = false;
+      }
+      else 
+      {
+         returnBoolValue = image_data[row][col];
+      } // end if
+      
+      return returnBoolValue;
+       
+   } // end getPixel()
+   
+   //
+   // Mutator
+   //
+   public boolean setPixel(int row, int col, boolean value)
+   {
+      boolean returnBoolValue = false;
+      //
+      //  check if values outside of range 
+      // 
+      if ((row < 0) || (row > BarcodeIO.MAX_HEIGHT  -1 ) || 
+            (col < 0) || (col > BarcodeIO.MAX_WIDTH  -1))
+      {
+         returnBoolValue = false;
+      }
+      else 
+      {
+         returnBoolValue = true;
+         image_data[row][col] = value;
+      } // end if
+
+      
+      return returnBoolValue;
+   } // end setPixel()
+   
+   
+   /************************
+    *                      *
+    *   OPTIONAL METHODS   *
+    *                      *
+    ************************/
+   //
+   //  Private Utility
+   //
+    
+   /**************************************
+    * displayToConsole
+    *    displays image to console
+    *    
+    * Return Value: 
+    *    none
+    * 
+    * PARAMETERS:
+    *   none
+    *
+    * 
+    ****************************************/
+   //
+   // Display To Console
+   //
+   public String displayToConsole()
+   {
+      String returnString = new String("");
+      
+      return returnString;
+   } // end displayToConsole()
+   
+   
+   /*************
+    *           *
+    *   CLONE   *
+    *           *
+    *************/
+   public Object clone() throws CloneNotSupportedException 
+   {
+   //   try
+   //   {
+         BarcodeImage copy = (BarcodeImage)super.clone();
+         copy.image_data = image_data.clone();
+         return copy;
+  //    }
+  //    catch (CloneNotSupportedException e)
+  //    {
+  //       return null;
+  //    }
+   } // end clone()
+} // end class BarcodeImage
+
+
+/*
+ * 
+ * PHASE 3
+ * ClassName: DataMatrix
+ * 
+ * Description
+ * This class provides implementation of  Datamatrix data structure  
+ * 
+ */
+
+//*************************************************************
+//
+//  DataMatrix Class Definition
+//
+//
+//*************************************************************
+
+class DataMatrix implements  BarcodeIO 
+{
+   //
+   //  ----- Private Attributes  ---
+   //
+   private BarcodeImage image;
+   private String text;
+   private int actualWidth;
+   private int actualHeight;
+   
+   // ***************************************
+   // 
+   //    --- constructors
+   //
+   // ***************************************
+     
+   /****************************
+    *                          *
+    *   DEFAULT CONSTRUCTORS   *
+    *   (3 MINIMUM)            *
+    *                          *
+    ****************************/
+   // 
+   // Default Constructor
+   //
+   public DataMatrix()
+   {
+      intializeBlankImage();
+   } // end default constructor DataMatrix()
+   
+   //
+   // Overloaded Constructor
+   //
+   public DataMatrix(BarcodeImage image)
+   {
+      text = "";
+      //
+      // try to clone the image, if not successful then create empty one
+      //
+      if (!scan(image))
+      {
+         intializeBlankImage();
+      }
+      else
+      {
+         actualWidth = computeSignalWidth();
+         actualHeight = computeSignalHeight();
+
+      }// end if 
+      
+   } // end overloaded constructor DataMatrix(BarcodeImage image)
+   
+   //
+   // Overloaded Constructor
+   //
+   public DataMatrix(String text)
+   {
+      image = new BarcodeImage();
+      //
+      // validate input text and convert to image
+      //
+      if (!readText(text))
+      {
+         text = "";
+         
+         actualWidth = 0;
+         actualHeight = 0;
+      } 
+      else
+      {
+         generateImageFromText();
+         actualWidth = computeSignalWidth();
+         actualHeight = computeSignalHeight();
+      }
+      // end if
+   } // end overloaded constructor DataMatrix(String text)
+   
+   /****************************
+    *                          *
+    *   CONSTRUCTOR HELPER     *
+    *                          *
+    ****************************/
+   
+   private void intializeBlankImage()
+   {
+      image = new BarcodeImage();
+      text = "";
+      actualWidth = 0;
+      actualHeight = 0;
+      
+   }  // end initializeBlankImage
+   
+   
+   /****************************
+    *                          *
+    *   ACCESSORS & MUTATORS   *
+    *                          *
+    ****************************/
+   //
+   // Accessor for Width
+   //
+   public int getActualWidth()
+   {
+      return actualWidth;
+   } // end getActualWidth()
+   
+   //
+   // Accessor for Height
+   //
+   public int getActualHeight()
+   {
+      return actualHeight;
+   } // end getActualHeight()
+   
+   //
+   // Mutator for Text
+   //
+   public boolean readText(String text)
+   {
+      if (text == null)
+      {
+         return false;
+      }
+      else
+      {
+         this.text = text;
+         return true;
+      }
+   } // end readText()
+   
+   //
+   // Mutator for Image
+   //
+   public boolean scan(BarcodeImage image)
+   {
+      boolean returnBoolValue = true;
+      //
+      // Attempt to clone the passed image
+      //
+      try
+      {
+         this.image = (BarcodeImage) image.clone();
+         cleanImage();
+         actualWidth = computeSignalWidth();
+         actualHeight = computeSignalHeight();
+         translateImageToText();
+         returnBoolValue = true;
+      }
+      catch (CloneNotSupportedException e)
+      {
+         returnBoolValue = false;
+      } // end try
+       
+      
+      return returnBoolValue;
+   } // end scan()
+   
+   
+   /***********************
+    *                     *
+    *   PRIVATE METHODS   *
+    *                     *
+    ***********************/
+   /**************************************
+    * computeSignalWidth
+    *    Compute Signal Width 
+    *    
+    * Return Value: 
+    *    int width of image
+    * 
+    * PARAMETERS:
+    *   none
+    *
+    * 
+    ****************************************/
+   //
+   // Compute Signal Width
+   //
+   private int computeSignalWidth()
+   {     
+      int i = 0;
+      
+      while (image.getPixel(BarcodeIO.MAX_HEIGHT - 1, i)
+         && (i != BarcodeIO.MAX_WIDTH - 1))
+      {
+         i++;
+      }
+      
+      return i;
+
+   } // end computeSignalWidth()
+   
+   /**************************************
+    * computeSignalHeight
+    *    Compute Signal Height 
+    *    
+    * Return Value: 
+    *    int Height of image
+    * 
+    * PARAMETERS:
+    *   none
+    *
+    * 
+    ****************************************/
+   //
+   // Compute Signal Height
+   //
+   private int computeSignalHeight()
+   {
+      int i = 0;
+      
+      while (image.getPixel((BarcodeIO.MAX_HEIGHT  -1) - i, 0)
+         && (i != BarcodeIO.MAX_HEIGHT))
+      {
+         i++;
+      } //end while
+      
+      return i;
+   } // end computeSignalHeight()
+   
+   /**************************************
+    * CleanImage
+    *    Puts image in correct location 
+    *    
+    * Return Value: 
+    *    none
+    * 
+    * PARAMETERS:
+    *   none
+    *
+    * 
+    ****************************************/
+   //
+   // Clean Image
+   //
+   private void cleanImage()
+   {
+      int leftOffset = 0;
+      int bottomOffset = 0;
+      
+      //
+      // First find if image left side and if not in rigth place
+      //
+      leftOffset = findLeftSide();
+      if (leftOffset > 0)
+      {
+         shiftImageLeft(leftOffset);
+      } // end if
+      
+      
+      bottomOffset = findBottomSide();
+      if (bottomOffset < (BarcodeIO.MAX_HEIGHT - 1))
+      {
+         shiftImageDown(bottomOffset);
+      }
+   } // end cleanImage()
+   
+   //********************//
+   //   Helper Methods   //
+   //        for         //
+   //    cleanImage()    //
+   //********************//
+   /**************************************
+    * findLeftSidet
+    *    finds left spine
+    *    
+    * Return Value: 
+    *    int offSet for image or -1 if in right place
+    * 
+    * PARAMETERS:
+    *   none
+    *
+    * 
+    ****************************************/
+    
+   private int findLeftSide()
+   {
+      int returnOffset = -1;        // offset value to return
+      int loopCol = 0;              // loop counter defined here to keep value
+      int loopRow = 0;              // loop counter defined here to keep value
+      boolean spineValue = false;   // holds value of pixel
+      
+      //
+      //  Starting from the left column search each row
+      //  in each column
+      //
+      for (loopRow = BarcodeIO.MAX_HEIGHT - 1; 
+            ((loopRow >= 0) && !(spineValue)); loopRow--)
+      {
+         //
+         //  Process a col 
+         //
+         for (loopCol = 0; 
+               ((loopCol < BarcodeIO.MAX_WIDTH) && !(spineValue)); loopCol++)
+         {
+            spineValue = image.getPixel(loopRow, loopCol);
+            
+            //
+            //  
+            //
+            if (spineValue)
+            {
+               returnOffset = loopCol;
+            } // end if
+         }// end for loopCol
+      }// end for loopRow
+
+      
+      return returnOffset;
+   }// end findLeftSide
+   /**************************************
+    * findBottomSide
+    *    finds bottom spine
+    *    
+    * Return Value: 
+    *    int offSet for image or -1 if in right place
+    * 
+    * PARAMETERS:
+    *   none
+    *
+    * 
+    ****************************************/
+   
+   private int findBottomSide()
+   {
+      int returnOffset = -1;        // offset value to return
+      int loopCol = 0;              // loop counter defined here to keep value
+      int loopRow = 0;              // loop counter defined here to keep value
+      boolean spineValue = false;   // holds value of pixel
+      
+      //
+      //  Starting from the left column search each row
+      //  in each column
+      //
+      for (loopCol = 0; 
+            ((loopCol < BarcodeIO.MAX_WIDTH) && !(spineValue)); loopCol++)
+      {
+         //
+         //  Process a row
+         //
+         for (loopRow = BarcodeIO.MAX_HEIGHT - 1; 
+               ((loopRow >= 0) && !(spineValue)); loopRow--)
+         {
+           spineValue = image.getPixel(loopRow, loopCol);
+            
+            //
+            //  
+            //
+            if (spineValue)
+            {
+               returnOffset = BarcodeIO.MAX_HEIGHT - loopRow - 1;
+            } // end if
+         }// end for loopCol
+      }// end for loopRow
+
+      
+      return returnOffset;
+   }// end findLeftSide
+
+   
+   
+   /**************************************
+    * shiftImageDown
+    *    shifts image down rows
+    *    
+    * Return Value: 
+    *    none
+    * 
+    * PARAMETERS:
+    *   int - number of rows to shift down
+    *
+    * 
+    ****************************************/
+   //
+   // Shift Image Down
+   //
+   private void shiftImageDown(int offset)
+   {
+      int loopCol;      // used for looping through column
+      int loopRow;      // used for looping through rows
+      int newPos;       // used to calculate new place (current pos - offset)
+      boolean setValue; // holds value to put in new position
+      
+      //
+      // First check to see if offset is valid
+      //
+      if ((offset > 1) && (offset < BarcodeIO.MAX_HEIGHT))
+      {
+         //
+         // next calculate where to stop move (blank the rest)
+         newPos = offset - 1;
+         
+         //
+         //  Starting from the bottom end of the image up to top
+         //  move each column down until reach stop position (newPos)
+         //
+         for (loopRow = BarcodeIO.MAX_HEIGHT - 1; loopRow > 0; loopRow--)
+         {
+            //
+            //  Process a col 
+            //
+            for (loopCol = 0; loopCol < BarcodeIO.MAX_WIDTH; loopCol++)
+            {
+               if (loopRow > newPos)
+               {
+                  setValue = image.getPixel(loopRow - offset, loopCol);
+               }
+               else
+               {
+                  setValue = false;
+               } // end if
+               
+               image.setPixel(loopRow, loopCol, setValue);
+               
+            }// end for loopCol
+         }// end for loopRow
+      }
+      
+   } // end shiftImageDown(int offset)
+   
+   /**************************************
+    * shiftImageLeft
+    *    shifts image left columns
+    *    
+    * Return Value: 
+    *    none
+    * 
+    * PARAMETERS:
+    *   int - number of columns to shift left
+    *
+    * 
+    ****************************************/
+   //
+   // Shift Image Left
+   //
+   private void shiftImageLeft(int offset)
+   {
+      int loopCol;      // used for looping through column
+      int loopRow;      // used for looping through rows
+      int newPos;       // used to calculate new place (current pos - offset)
+      boolean setValue; // holds value to put in new position
+      
+      //
+      // First check to see if offset is valid
+      //
+      if ((offset > 1) && (offset < BarcodeIO.MAX_WIDTH))
+      {
+         //
+         // next calculate where to stop move (blank the rest)
+         newPos = BarcodeIO.MAX_WIDTH - offset;
+         
+         //
+         //  Starting from the left end of the image up to end
+         //  move each row over until reach stop position (newPos)
+         //
+         for (loopCol = 0; loopCol < BarcodeIO.MAX_WIDTH; loopCol++)
+         {
+            //
+            //  Process a row 
+            //
+            for (loopRow = 0; loopRow < BarcodeIO.MAX_HEIGHT; loopRow++)
+            {
+               if (loopCol < newPos)
+               {
+                  setValue = image.getPixel(loopRow, loopCol + offset);
+               }
+               else
+               {
+                  setValue = false;
+               } // end if
+               
+               image.setPixel(loopRow, loopCol, setValue);
+               
+            }// end for loopRows
+         }// end for loopCol
+      }
+   } // end shiftImageLeft(int offset)
+   
+   
+   /***************************
+    *                         *
+    *   RECOMMENDED METHODS   *
+    *                         *
+    ***************************/
+   //
+   // Generate Image from Text
+   //
+   public boolean generateImageFromText()
+   {
+      image = new BarcodeImage();
+      int loopCol = 0;
+      boolean topBorderBit = true;
+      
+      if (text == null)
+      {
+         return false;
+      }
+      
+      //
+      // set bottom spine
+      //
+      for(loopCol = 0; loopCol <= text.length() + 1; loopCol++)
+      {
+         image.setPixel(BarcodeIO.MAX_HEIGHT - 1, loopCol, true);
+      }
+      
+      //
+      //  set left spine
+      //
+      writeCharToCol(0, 255);
+      
+      image.setPixel(BarcodeIO.MAX_HEIGHT - 9, 0, topBorderBit);
+      
+      
+      for(loopCol = 1; loopCol <= text.length(); loopCol++)
+      {
+         
+         if(!writeCharToCol(loopCol, (int)text.charAt(loopCol - 1)))
+         return false;
+         topBorderBit = !topBorderBit;
+         image.setPixel(BarcodeIO.MAX_HEIGHT - 9, loopCol, topBorderBit);
+      }
+      
+      //
+      // set right border
+      //
+      writeCharToCol(loopCol, 170);
+      topBorderBit = !topBorderBit;
+      image.setPixel(BarcodeIO.MAX_HEIGHT - 10, loopCol, topBorderBit);
+   
+      return true;
+   } // end generateImageFromText()
+   
+   //
+   // Translate Image to Text
+   //
+   public boolean translateImageToText()
+   {
+      String textValue = "";
+      int charValue;
+      
+      if(image == null)
+      {
+         return false;
+      } // end if
+      
+      for (int loopCol = 1; loopCol < actualWidth - 1; loopCol++)
+      {
+         charValue = 0;
+         for (int loopRow = BarcodeIO.MAX_HEIGHT - 2; 
+               loopRow > (BarcodeIO.MAX_HEIGHT - actualHeight); loopRow--)
+         {
+            if (image.getPixel(loopRow, loopCol))
+            {
+               charValue += Math.pow(2, (BarcodeIO.MAX_HEIGHT - 2) - loopRow);
+            }
+           
+         } // end for loopRow
+        
+         textValue += (char) charValue;
+      } // end for loopCol
+      
+      text = textValue;
+      
+      return true;
+   } // end translateImageToText()
+   
+   //*************************//
+   //     Helper Methods      //
+   //           for           //
+   //   Recommended Methods   //
+   //*************************//
+   
+  
+   //
+   // Write Char to Column
+   //
+   private boolean writeCharToCol(int col, int code)
+   {
+      boolean returnValue = false;                  // return code
+      String binaryZeroes = "00000000";             // converts to binary 
+      String binaryString;                          // converts to binary 
+      int lenBinaryString = 0;                      // length bits
+      int rowPos = 0;                               // row position
+      int lastEightBits = 0;
+      Boolean boolvalue = false;
+      
+      binaryString = binaryZeroes + Integer.toBinaryString(code);
+      lastEightBits = binaryString.length() - 8;
+      binaryString = binaryString.substring(lastEightBits);
+      lenBinaryString = binaryString.length();
+      //
+      //  Checks if code is outside acceptable values or length is too large
+      //
+      if ((code < 0 || code > 255) || (lenBinaryString > 8))
+      {
+         returnValue = false;
+      }
+      else
+      {         
+         //
+         //  all is good so loop through each bit and set the column value
+         //
+         for(int loopBit = lenBinaryString; loopBit > 0; loopBit--)
+         {
+                     
+            if(binaryString.charAt(loopBit - 1) == '1')
+            {
+               boolvalue = true;
+            }
+            else
+            {
+               boolvalue = false;
+            } // end if
+            
+            rowPos = BarcodeIO.MAX_HEIGHT - 2  - (8 - loopBit);
+            image.setPixel(rowPos, col, boolvalue);
+                     
+         } // end for  
+                      
+         returnValue = true;
+ 
+      }// end if
+      
+      return returnValue;
+   } // end writeCharToCol(int col, int code)
+   
+   
+   /************************
+    *                      *
+    *   OPTIONAL METHODS   *
+    *                      *
+    ************************/
+   //
+   // Display Text To Console
+   //
+   public void displayTextToConsole()
+   {
+      System.out.println(text);
+   } // end displayImageToConsole()
+   
+   //
+   // Display Image To Console
+   //
+   public void displayImageToConsole()
+   {
+/*      for(int i = 0; i < text.length() + 1; i++)
+      {
+         for(int j = BarcodeIO.MAX_HEIGHT - actualHeight;
+            j < BarcodeIO.MAX_HEIGHT; j++)
+         {
+            System.out.print("|");
+            
+            if(image.getPixel(j, i))
+            {
+               System.out.print(BLACK_CHAR);
+            }
+            else
+            {
+               System.out.print(WHITE_CHAR);
+            }
+            
+            System.out.print("|");
+            System.out.println();
+         }
+      }
+*/   
+      int loopCol = 0;              // loop counter defined here to keep value
+      int loopRow = 0;              // loop counter defined here to keep value
+      
+      //
+      //  
+      //  
+      //
+      displayRowOfDashes(actualWidth + 1);
+      
+      for (loopRow =  BarcodeIO.MAX_HEIGHT - actualHeight; 
+            loopRow < BarcodeIO.MAX_HEIGHT ; loopRow++)
+      {
+         //
+         //  Process a col 
+         //
+         System.out.print("|");
+         for (loopCol = 0; loopCol <= actualWidth; loopCol++)
+         {        
+            
+            if(image.getPixel(loopRow, loopCol))
+            {
+               System.out.print(BLACK_CHAR);
+            }
+            else
+            {
+               System.out.print(WHITE_CHAR);
+            }
+            
+
+         }// end for loopCol
+         System.out.print("|");
+         System.out.println();
+
+      }// end for loopRow
+      displayRowOfDashes(actualWidth + 1);
+
+   } // end displayImageToConsole()
+   
+   //
+   // Display Raw Image
+   //
+   public void displayRawImage()
+   {
+      int loopCol = 0;              // loop counter defined here to keep value
+      int loopRow = 0;              // loop counter defined here to keep value
+      
+      //
+      //  
+      //  
+      //
+      displayRowOfDashes(BarcodeIO.MAX_WIDTH);
+      
+      for (loopRow = 0; loopRow <= BarcodeIO.MAX_HEIGHT ; loopRow++)
+      {
+         //
+         //  Process a col 
+         //
+         System.out.print("|");
+         for (loopCol = 0; loopCol <= BarcodeIO.MAX_WIDTH; loopCol++)
+         {        
+            
+            if(image.getPixel(loopRow, loopCol))
+            {
+               System.out.print(BLACK_CHAR);
+            }
+            else
+            {
+               System.out.print(WHITE_CHAR);
+            }
+            
+
+         }// end for loopCol
+         System.out.print("|");
+         System.out.println();
+
+      }// end for loopRow
+      displayRowOfDashes(BarcodeIO.MAX_WIDTH);
+
+   } // end displayRawImage()
+   
+   private void displayRowOfDashes(int numDashes)
+   {
+      //System.out.println();
+      
+      for (int loop = 0; loop <= numDashes; loop++)
+      {
+         System.out.print("-");
+      } // end for
+      
+      System.out.println();
+      
+   } // end displayRowOfDashes
+
+} // end class DataMatrix
+
+
+/********************* Output *******************************
+ * 
+ CSUMB CSIT online program is top notch.
+-------------------------------------------
+|* * * * * * * * * * * * * * * * * * * * * |
+|*                                       * |
+|****** **** ****** ******* ** *** *****   |
+|*     *    ****************************** |
+|* **    * *        **  *    * * *   *     |
+|*   *    *  *****    *   * *   *  **  *** |
+|*  **     * *** **   **  *    **  ***  *  |
+|***  * **   **  *   ****    *  *  ** * ** |
+|*****  ***  *  * *   ** ** **  *   * *    |
+|***************************************** |
+-------------------------------------------
+You did it!  Great work.  Celebrate.
+----------------------------------------
+|* * * * * * * * * * * * * * * * * * *  |
+|*                                    * |
+|**** *** **   ***** ****   *********   |
+|* ************ ************ ********** |
+|** *      *    *  * * *         * *    |
+|***   *  *           * **    *      ** |
+|* ** * *  *   * * * **  *   ***   ***  |
+|* *           **    *****  *   **   ** |
+|****  *  * *  * **  ** *   ** *  * *   |
+|************************************** |
+----------------------------------------
+What a great resume builder this is!
+----------------------------------------
+|                                       |
+|* * * * * * * * * * * * * * * * * * ** |
+|***** * ***** ****** ******* **** **   |
+|* ************************************ |
+|**  *    *  * * **    *    * *  *  *   |
+|* *               *    **     **  *  * |
+|**  *   * * *  * ***  * ***  *         |
+|**      **    * *    *     *    *  * * |
+|** *  * * **   *****  **  *    ** ***  |
+|************************************** |
+----------------------------------------
+  
+ *  
+ ************************************************************/
